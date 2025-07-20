@@ -1,144 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>WebSocket Mock 控制台</title>
-		<style>
-			body {
-				font-family: sans-serif;
-				padding: 2em;
-				background: #f9f9f9;
-				max-width: 1000px;
-				margin: auto;
-			}
-			.container {
-				display: flex;
-				gap: 2em;
-			}
-			.panel {
-				flex: 1;
-				background: #fff;
-				padding: 1em;
-				border-radius: 4px;
-				box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-			}
-			h1,
-			h2 {
-				margin-top: 0;
-			}
-			textarea {
-				width: 100%;
-				height: 120px;
-				margin-bottom: 1em;
-				font-family: monospace;
-			}
-			button {
-				padding: 8px 16px;
-				font-size: 16px;
-				cursor: pointer;
-				margin-bottom: 1em;
-			}
-			.log {
-				white-space: pre-wrap;
-				background: #eee;
-				padding: 1em;
-				height: 200px;
-				overflow: auto;
-				border-radius: 4px;
-				font-family: monospace;
-				font-size: 14px;
-			}
-			.ws-log {
-				background: #222;
-				color: #0f0;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>🧪 WebSocket Mock 控制台</h1>
-		<div class="container">
-			<!-- 左侧：POST 推送 & WS 接收 日志 -->
-			<div class="panel">
-				<h2>1. 发送 POST 消息广播给所有客户端</h2>
-				<textarea id="jsonInput">{ "message": "hello from web console", "source": "web-ui" }</textarea>
-				<button onclick="sendHTTP()">发送 POST</button>
 
-				<h2>2. WebSocket 接收消息日志</h2>
-				<div
-					id="wsLog"
-					class="log ws-log"
-				></div>
-			</div>
+<head>
+	<meta charset="UTF-8" />
+	<title>WebSocket Mock 控制台</title>
+	<style>
+		body {
+			font-family: sans-serif;
+			padding: 2em;
+			background: #f9f9f9;
+			max-width: 1000px;
+			margin: auto;
+		}
 
-			<!-- 右侧：客户端 WS 测试 区 -->
-			<div class="panel">
-				<h2>3. 客户端 WebSocket 测试</h2>
-				<p>输入要发送到服务器的 JSON：</p>
-				<textarea id="wsInput">{ "type": "test", "content": "Hello Server" }</textarea>
-				<button onclick="sendWS()">发送 WS 消息</button>
+		.container {
+			display: flex;
+			gap: 2em;
+			flex-wrap: wrap;
+		}
 
-				<h2>4. 客户端发送/接收日志</h2>
-				<div
-					id="wsClientLog"
-					class="log"
-				></div>
-			</div>
+		.panel {
+			flex: 1 1 calc(50% - 4em);
+			/* 每个面板占大约 50% 宽度 */
+			background: #fff;
+			padding: 1em;
+			border-radius: 4px;
+			box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+		}
+
+		h1,
+		h2 {
+			margin-top: 0;
+		}
+
+		textarea {
+			width: 100%;
+			height: 120px;
+			margin-bottom: 1em;
+			font-family: monospace;
+		}
+
+		button {
+			padding: 8px 16px;
+			font-size: 16px;
+			cursor: pointer;
+			margin-bottom: 1em;
+		}
+
+		.log {
+			white-space: pre-wrap;
+			background: #eee;
+			padding: 1em;
+			height: 200px;
+			overflow: auto;
+			border-radius: 4px;
+			font-family: monospace;
+			font-size: 14px;
+		}
+
+		.ws-log {
+			background: #222;
+			color: #0f0;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>🧪 WebSocket Mock 控制台</h1>
+	<div class="container">
+		<!-- 左侧：POST 推送 & WS 接收 日志 -->
+		<div class="panel">
+			<h2>1. 发送 POST 消息广播给所有客户端</h2>
+			<textarea id="jsonInput">{ "message": "hello from web console", "source": "web-ui" }</textarea>
+			<button onclick="sendHTTP()">发送 POST</button>
+
+			<h2>2. WebSocket 接收消息日志</h2>
+			<div id="wsLog" class="log ws-log"></div>
 		</div>
 
-		<script>
-			// 通用日志追加函数
-			function appendLog(containerId, msg) {
-				const div = document.getElementById(containerId);
-				div.textContent += msg + '\n';
-				div.scrollTop = div.scrollHeight;
+		<!-- 右侧：客户端 WS 测试 区 -->
+		<div class="panel">
+			<h2>3. 客户端 WebSocket 测试</h2>
+			<p>输入要发送到服务器的 JSON：</p>
+			<textarea id="wsInput">{ "type": "test", "content": "Hello Server" }</textarea>
+			<button onclick="sendWS()">发送 WS 消息</button>
+
+			<h2>4. 客户端发送/接收日志</h2>
+			<div id="wsClientLog" class="log"></div>
+		</div>
+		<!-- SSE 控制面板 -->
+		<div class="panel">
+			<h2>5. 服务端发送事件（SSE）</h2>
+			<p>SSE 是单向推送，点击下方按钮建立连接</p>
+			<button onclick="startSSE()">建立 SSE 连接</button>
+			<button onclick="stopSSE()">断开 SSE 连接</button>
+			<div id="sseStatus">当前状态：未连接</div>
+
+			<h2>6. SSE 日志</h2>
+			<div id="sseLog" class="log"></div>
+
+			<h2>7. 向 SSE 客户端广播消息</h2>
+			<textarea id="sseInput">{ "from": "client-ui", "content": "hello sse" }</textarea>
+			<button onclick="sendSSEMessage()">发送 SSE 消息</button>
+		</div>
+
+	</div>
+
+	<script>
+		// 通用日志追加函数
+		function appendLog(containerId, msg) {
+			const div = document.getElementById(containerId);
+			div.textContent += msg + '\n';
+			div.scrollTop = div.scrollHeight;
+		}
+
+		// ==== 1. HTTP POST 推送 ====
+		async function sendHTTP() {
+			const raw = document.getElementById('jsonInput').value;
+			try {
+				const payload = JSON.parse(raw);
+				const res = await fetch('/push', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				});
+				const result = await res.json();
+				appendLog('wsLog', `[📤 POST 已发送] ${JSON.stringify(result)}`);
+			} catch (err) {
+				appendLog('wsLog', `[❌ POST 错误] ${err.message}`);
+			}
+		}
+
+		// ==== 2. WebSocket 客户端（接收部分） ====
+		const ws = new WebSocket(`ws://${location.host}/ws?token=test`);
+		ws.addEventListener('open', () => {
+			appendLog('wsLog', '[✅ WS 已连接]');
+		});
+		ws.addEventListener('message', e => {
+			appendLog('wsLog', `[📥 收到] ${e.data}`);
+			appendLog('wsClientLog', `[📥 收到] ${e.data}`);
+		});
+		ws.addEventListener('close', () => {
+			appendLog('wsLog', '[🔌 WS 已关闭]');
+			appendLog('wsClientLog', '[🔌 WS 已关闭]');
+		});
+		ws.addEventListener('error', err => {
+			appendLog('wsLog', `[❗ WS 错误] ${err.message}`);
+			appendLog('wsClientLog', `[❗ WS 错误] ${err.message}`);
+		});
+
+		// ==== 3. 客户端发送 WS 消息 ====
+		function sendWS() {
+			const raw = document.getElementById('wsInput').value;
+			try {
+				const payload = JSON.parse(raw);
+				ws.send(JSON.stringify(payload));
+				appendLog('wsClientLog', `[📤 发送] ${JSON.stringify(payload)}`);
+			} catch (err) {
+				appendLog('wsClientLog', `[❌ WS 发送错误] ${err.message}`);
+			}
+		}
+
+	</script>
+	<script>
+		let sse = null;
+
+		function startSSE() {
+			if (sse) {
+				appendLog('sseLog', '[⚠️ SSE 已连接，无需重复连接]');
+				return;
 			}
 
-			// ==== 1. HTTP POST 推送 ====
-			async function sendHTTP() {
-				const raw = document.getElementById('jsonInput').value;
-				try {
-					const payload = JSON.parse(raw);
-					const res = await fetch('/push', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(payload)
+			sse = new EventSource('/sse');
+			document.getElementById('sseStatus').textContent = '当前状态：连接中...';
+
+			sse.addEventListener('connected', () => {
+				appendLog('sseLog', '[✅ SSE 已连接]');
+				document.getElementById('sseStatus').textContent = '当前状态：已连接';
+			});
+
+			sse.onmessage = e => {
+				appendLog('sseLog', `[📥 SSE 收到] ${e.data}`);
+				appendLog('wsClientLog', `[📥 SSE 收到] ${e.data}`);
+			};
+
+			sse.onerror = () => {
+				appendLog('sseLog', '[❌ SSE 错误]');
+				document.getElementById('sseStatus').textContent = '当前状态：连接错误';
+				sse.close();
+				sse = null;
+			};
+		}
+		function stopSSE() {
+			if (sse) {
+				sse.close();
+				sse = null;
+				appendLog('sseLog', '[🔌 SSE 已断开]');
+				document.getElementById('sseStatus').textContent = '当前状态：未连接';
+			} else {
+				appendLog('sseLog', '[⚠️ SSE 未连接]');
+			}
+		}
+		function sendSSEMessage() {
+			const raw = document.getElementById('sseInput').value;
+			try {
+				const payload = JSON.parse(raw);
+				fetch('/sse-push', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				})
+					.then(res => res.json())
+					.then(result => {
+						appendLog('sseLog', `[📤 SSE 推送已发送] ${JSON.stringify(result)}`);
 					});
-					const result = await res.json();
-					appendLog('wsLog', `[📤 POST 已发送] ${JSON.stringify(result)}`);
-				} catch (err) {
-					appendLog('wsLog', `[❌ POST 错误] ${err.message}`);
-				}
+			} catch (err) {
+				appendLog('sseLog', `[❌ SSE 推送错误] ${err.message}`);
 			}
+		}
+	</script>
+</body>
 
-			// ==== 2. WebSocket 客户端（接收部分） ====
-			const ws = new WebSocket(`ws://${location.host}/ws?token=test`);
-			ws.addEventListener('open', () => {
-				appendLog('wsLog', '[✅ WS 已连接]');
-			});
-			ws.addEventListener('message', e => {
-				appendLog('wsLog', `[📥 收到] ${e.data}`);
-				appendLog('wsClientLog', `[📥 收到] ${e.data}`);
-			});
-			ws.addEventListener('close', () => {
-				appendLog('wsLog', '[🔌 WS 已关闭]');
-				appendLog('wsClientLog', '[🔌 WS 已关闭]');
-			});
-			ws.addEventListener('error', err => {
-				appendLog('wsLog', `[❗ WS 错误] ${err.message}`);
-				appendLog('wsClientLog', `[❗ WS 错误] ${err.message}`);
-			});
-
-			// ==== 3. 客户端发送 WS 消息 ====
-			function sendWS() {
-				const raw = document.getElementById('wsInput').value;
-				try {
-					const payload = JSON.parse(raw);
-					ws.send(JSON.stringify(payload));
-					appendLog('wsClientLog', `[📤 发送] ${JSON.stringify(payload)}`);
-				} catch (err) {
-					appendLog('wsClientLog', `[❌ WS 发送错误] ${err.message}`);
-				}
-			}
-		</script>
-	</body>
 </html>

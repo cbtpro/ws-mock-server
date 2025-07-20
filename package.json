@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "用来对前端websocket代码进行联调的小工具",
   "scripts": {
-    "dev": "nodemon ws-server-demo.js",
-    "start": "node ws-server-demo.js",
+    "dev": "nodemon src/main.js",
+    "start": "node src/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
